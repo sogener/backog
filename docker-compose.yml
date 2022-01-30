@@ -1,0 +1,42 @@
+version: '3.8'
+
+volumes:
+  database:
+    driver: 'local'
+
+services:
+  webapp:
+    image: 'nginx:alpine'
+    working_dir: /var/www/site
+    volumes:
+      - '.:/var/www/app:cached'
+      - './docker/dev/nginx/default.conf:/etc/nginx/conf.d/default.conf'
+    ports:
+      - '80:80'
+    depends_on:
+      - app
+      - database
+  app:
+    build:
+      context: .
+      dockerfile: docker/dev/php/Dockerfile
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
+    depends_on:
+      - database
+    volumes:
+      - .:/var/www/app:cached
+
+  database:
+    image: 'mysql:8.0'
+#    working_dir: /var/www/site
+    volumes:
+      - ./docker/dev/database/:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - '3306:3306'
